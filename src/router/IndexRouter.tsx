@@ -7,7 +7,6 @@ import { useEffect, type FC } from 'react'
 const indexRouter: FC = () => {
   const accessToken = useAppSelector((state) => state.user.accessToken)
   const dispatch = useAppDispatch()
-
   useEffect(() => {
     if (accessToken) {
       dispatch(getInfo())

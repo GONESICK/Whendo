@@ -7,6 +7,7 @@ import Role from '@/pages/User/role'
 import List from '@/pages/User/list'
 import MessageList from '@/pages/message/list'
 import Notification from '@/pages/message/notification'
+import MenuList from '@/pages/User/menu'
 
 const routes: RouteObject[] = [
   {
@@ -40,6 +41,13 @@ const routes: RouteObject[] = [
             element: <Role />,
             handle: {
               title: '角色列表'
+            }
+          },
+          {
+            path: 'menu',
+            element: <MenuList />,
+            handle: {
+              title: '菜单列表'
             }
           }
         ],

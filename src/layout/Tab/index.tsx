@@ -39,6 +39,7 @@ const Tab: FC = () => {
 
   const onChange = (key: string) => {
     setActiveKey(key)
+    navigate(key)
   }
   const remove = (targetKey: TargetKey) => {
     const targetIndex = items.findIndex((pane) => pane.key === targetKey)

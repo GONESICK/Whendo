@@ -2,50 +2,9 @@ import { Layout, Menu, type MenuProps } from 'antd'
 import { UserOutlined, VideoCameraOutlined } from '@ant-design/icons'
 import { type FC, useState, useEffect } from 'react'
 import { useNavigate, useMatches } from 'react-router-dom'
+import { getMenuList } from '@/api/user'
 
 const { Sider } = Layout
-
-const items: MenuProps['items'] = [
-  {
-    key: '/home',
-    icon: <VideoCameraOutlined />,
-    label: 'nav 1'
-  },
-  {
-    key: '/user',
-    icon: <UserOutlined />,
-    label: '用户管理',
-    children: [
-      {
-        key: '/user/list',
-        icon: <UserOutlined />,
-        label: '用户列表'
-      },
-      {
-        key: '/user/role',
-        icon: <UserOutlined />,
-        label: '角色列表'
-      }
-    ]
-  },
-  {
-    key: '/message',
-    icon: <UserOutlined />,
-    label: '公告管理',
-    children: [
-      {
-        key: '/message/list',
-        icon: <UserOutlined />,
-        label: '公告列表'
-      },
-      {
-        key: '/message/notification',
-        icon: <UserOutlined />,
-        label: '消息通知'
-      }
-    ]
-  }
-]
 
 const SiderComponent: FC<{ collapsed: boolean }> = ({
   collapsed
@@ -54,11 +13,36 @@ const SiderComponent: FC<{ collapsed: boolean }> = ({
 }) => {
   const navigate = useNavigate()
   const matches = useMatches()
+  const [items, setItems] = useState([])
   const selectKeys = [matches[matches.length - 1].pathname]
   const [openKeys, setOpenKeys] = useState<string[]>([])
   const handleCLick: MenuProps['onClick'] = ({ key, keyPath }) => {
     navigate(key)
   }
+  // 生成item项
+  const generateMenu = (data: any) => {
+    const sortItems = data
+      .sort((a: any, b: any) => a.sort - b.sort)
+      .filter((f: any) => f.hidden)
+    const items = sortItems.map((m: any) => {
+      return {
+        key: m.path,
+        icon: <UserOutlined />,
+        label: m.title,
+        children: m.children ? generateMenu(m.children) : ''
+      }
+    })
+    return items
+  }
+  // 加载菜单
+  useEffect(() => {
+    getMenuList({}).then(({ data: { list } }) => {
+      const items = generateMenu(list)
+      console.log(items)
+      setItems(items)
+    })
+  }, [])
+  // 菜单动态展开 高亮选中
   useEffect(() => {
     const parentRoute = matches.slice(0, -1)
     parentRoute.forEach((f) => {
@@ -67,7 +51,6 @@ const SiderComponent: FC<{ collapsed: boolean }> = ({
         setOpenKeys([...openKeys, f.pathname])
       }
     })
-    // setOpenKeys(openKeys)
   }, [matches])
   const handleOpenChange = (openKey: string[]) => {
     if (openKey.length > 1) {

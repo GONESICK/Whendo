@@ -1,3 +1,4 @@
+import { setToken, setUserInfo } from '@/redux/slice/userSlice'
 import axios, {
   type AxiosResponse,
   type InternalAxiosRequestConfig,
@@ -10,11 +11,6 @@ const http: AxiosInstance = axios.create({
   baseURL: '/api',
   timeout: 200000
 })
-
-// const persistUser: string | null = localStorage.getItem('persist:user')
-// const accessToken: string = persistUser
-//   ? JSON.parse(persistUser).accessToken
-//   : ''
 
 // 请求拦截器
 http.interceptors.request.use(
@@ -34,6 +30,11 @@ http.interceptors.request.use(
 // 相应拦截器
 http.interceptors.response.use(
   (response: AxiosResponse) => {
+    const { code } = response.data
+    if (code === 400) {
+      store.dispatch(setToken(''))
+      store.dispatch(setUserInfo({}))
+    }
     return response.data
   },
   async (error): Promise<any> => {
