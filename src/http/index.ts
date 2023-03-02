@@ -2,7 +2,8 @@ import { setToken, setUserInfo } from '@/redux/slice/userSlice'
 import axios, {
   type AxiosResponse,
   type InternalAxiosRequestConfig,
-  type AxiosInstance
+  type AxiosInstance,
+  type AxiosRequestConfig
 } from 'axios'
 import { store } from '@/redux/store'
 
@@ -41,5 +42,29 @@ http.interceptors.response.use(
     return Promise.reject(error)
   }
 )
+
+interface responRes {
+  code: number
+  message: string
+  data: any
+}
+
+interface Api {
+  '/menuList': {
+    name: string
+    age: number
+  }
+}
+
+type UrlParam = keyof Api
+type AxiosCusConfig = Omit<AxiosRequestConfig, 'url' | 'method' | 'data'>
+
+export const Post = (
+  url: keyof Api,
+  data: Api[UrlParam],
+  config?: AxiosCusConfig
+): Promise<responRes> => {
+  return http.post(url, config)
+}
 
 export default http

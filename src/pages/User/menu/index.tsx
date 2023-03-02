@@ -1,7 +1,18 @@
 import React, { useEffect, useState } from 'react'
-import { Table, Button, Drawer, Form, Input, Select, Space, Radio } from 'antd'
+import {
+  Table,
+  Button,
+  Drawer,
+  Form,
+  Input,
+  Select,
+  Space,
+  Radio,
+  message,
+  Popconfirm
+} from 'antd'
 
-import { getMenuList, getRoleList, setMenu } from '@/api/user'
+import { getMenuList, getRoleList, setMenu, deleteMenu } from '@/api/user'
 const { Option } = Select
 const Menu = () => {
   const [loading, setLoading] = useState(false)
@@ -10,14 +21,31 @@ const Menu = () => {
   const [open, setOpen] = useState(false)
   const [form] = Form.useForm()
   const [subLoading, setSubLoading] = useState(false)
+  const [currentId, setCurrentId] = useState('')
   const [columns, setColums] = useState<any[]>([
     {
       title: 'Action',
       key: 'action',
       render: (_, record: any) => (
         <Space size="middle">
-          <a>编辑</a>
-          <a>删除</a>
+          <a
+            onClick={() => {
+              showDrawer('edit', record)
+            }}
+          >
+            编辑
+          </a>
+          <Popconfirm
+            title="删除菜单"
+            description="确认删除该菜单吗？"
+            onConfirm={() => {
+              confirm(record.id)
+            }}
+            okText="确认"
+            cancelText="取消"
+          >
+            <a href="#">删除</a>
+          </Popconfirm>
         </Space>
       )
     },
@@ -45,6 +73,11 @@ const Menu = () => {
       title: '组件名称',
       dataIndex: 'name',
       key: 'name'
+    },
+    {
+      title: '排序',
+      dataIndex: 'sort',
+      key: 'sort'
     },
     {
       title: '是否显示',
@@ -77,27 +110,41 @@ const Menu = () => {
     } catch (error) {}
   }
 
-  const showDrawer = () => {
-    form.resetFields()
+  // 确认删除
+  const confirm = async (id: number) => {
+    try {
+      const { data } = await deleteMenu({ id })
+      message.success(data)
+    } catch (error) {
+      message.error('error')
+    }
+  }
+
+  const showDrawer = (type?: string, row?: any) => {
+    if (type) {
+      setCurrentId(row.id)
+      form.setFieldsValue(row)
+    }
     setOpen(true)
   }
   const onClose = () => {
+    form.resetFields()
+
     setOpen(false)
   }
   const onSubmit = () => {
     form
       .validateFields()
       .then((values) => {
-        console.log(values)
         setSubLoading(true)
-        setMenu(values).then((res) => {
-          console.log(res)
+        setMenu({ ...values, id: currentId }).then((res) => {
+          message.success('保存成功')
           setSubLoading(false)
         })
         setOpen(false)
       })
       .catch((err) => {
-        console.log(err)
+        message.error(err)
         setSubLoading(false)
       })
   }
@@ -108,7 +155,12 @@ const Menu = () => {
   return (
     <div>
       <div style={{ float: 'right', marginBottom: '10px' }}>
-        <Button type="primary" onClick={showDrawer}>
+        <Button
+          type="primary"
+          onClick={() => {
+            showDrawer()
+          }}
+        >
           添加菜单
         </Button>
       </div>
@@ -183,14 +235,17 @@ const Menu = () => {
             <Input style={{ width: '100%' }} placeholder="请输入菜单名称" />
           </Form.Item>
           <Form.Item
-            name="name"
-            label="组件名称"
-            rules={[{ required: true, message: '请输入组件名称' }]}
+            name="relativePath"
+            label="组件路径"
+            rules={[{ required: true, message: '请输入组件路径' }]}
           >
-            <Input style={{ width: '100%' }} placeholder="请输入组件名称" />
+            <Input style={{ width: '100%' }} placeholder="请输入组件路径" />
           </Form.Item>
           <Form.Item name="sort" label="排序">
             <Input style={{ width: '100%' }} placeholder="请输入顺序" />
+          </Form.Item>
+          <Form.Item name="icon" label="菜单图标">
+            <Input style={{ width: '100%' }} placeholder="请输入图标名称" />
           </Form.Item>
           <Form.Item
             name="hidden"

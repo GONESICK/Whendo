@@ -1,6 +1,6 @@
 import React, { type FC } from 'react'
 import { useAppDispatch } from '@/redux/hook'
-import { setToken, setUserInfo } from '@/redux/slice/userSlice'
+import { setToken, setUserInfo, setMenus } from '@/redux/slice/userSlice'
 import { Layout, theme, Avatar, Space, Dropdown } from 'antd'
 import type { MenuProps } from 'antd'
 import {
@@ -43,6 +43,7 @@ const HeaderComponent: FC<propsType> = ({ collapsed, setCollapsed }) => {
       case '2':
         dispatch(setToken(''))
         dispatch(setUserInfo({}))
+        dispatch(setMenus([]))
         break
     }
   }

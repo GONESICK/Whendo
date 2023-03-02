@@ -1,4 +1,4 @@
-import http from '@/http'
+import http, { Post } from '@/http'
 
 // 获取用户列表
 export const getUserList = (data: any) => {
@@ -11,13 +11,17 @@ export const getUserList = (data: any) => {
 
 // 获取菜单列表
 export const getMenuList = (data: any) => {
+  return Post('/menuList', { name: 'gege', age: 22 })
+}
+
+// 删除菜单
+export const deleteMenu = (data: any) => {
   return http({
-    url: '/menuList',
+    url: '/deleteMenu',
     method: 'post',
     data
   })
 }
-
 // 获取角色列表
 export const getRoleList = () => {
   return http({

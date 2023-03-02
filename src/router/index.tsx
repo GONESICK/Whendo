@@ -1,95 +1,53 @@
-import { createBrowserRouter, Navigate } from 'react-router-dom'
-import type { RouteObject } from 'react-router-dom'
-import IndexRouter from './IndexRouter'
-import Login from '@/pages/Login/index'
-import Home from '@/pages/Home'
-import Role from '@/pages/User/role'
-import List from '@/pages/User/list'
-import MessageList from '@/pages/message/list'
-import Notification from '@/pages/message/notification'
-import MenuList from '@/pages/User/menu'
+import React, { lazy, Suspense } from 'react'
+import { Navigate } from 'react-router-dom'
+import { routes } from './constantRoute'
+import _ from 'lodash'
 
-const routes: RouteObject[] = [
-  {
-    path: '/',
-    element: <IndexRouter />,
-    children: [
-      {
-        index: true,
-        element: <Navigate to="home" />
-      },
-      {
-        path: 'home',
-        element: <Home />,
-        handle: {
-          title: '首页'
-        }
-      },
-      {
-        path: 'user',
-        children: [
-          { index: true, element: <Navigate to="list" /> },
-          {
-            path: 'list',
-            element: <List />,
-            handle: {
-              title: '用户列表'
-            }
-          },
-          {
-            path: 'role',
-            element: <Role />,
-            handle: {
-              title: '角色列表'
-            }
-          },
-          {
-            path: 'menu',
-            element: <MenuList />,
-            handle: {
-              title: '菜单列表'
-            }
-          }
-        ],
-        handle: {
-          title: '用户管理'
-        }
-      },
-      {
-        path: 'message',
-        children: [
-          {
-            index: true,
-            element: <Navigate to="list" />
-          },
-          {
-            path: 'list',
-            element: <MessageList />,
-            handle: {
-              title: '公告列表'
-            }
-          },
-          {
-            path: 'notification',
-            element: <Notification />,
-            handle: {
-              title: '消息通知'
-            }
-          }
-        ]
-      }
-    ]
-  },
-  {
-    path: '/Login',
-    element: <Login />
-  },
-  {
-    path: '*',
-    element: <div>sorry,something wrong</div>
+const modules = import.meta.glob('../pages/**/index.tsx')
+const lazyLoad = (path: string) => {
+  const Comp = lazy(modules[path] as any)
+  return <Suspense fallback={<div>loading</div>}>{<Comp />}</Suspense>
+}
+
+export const conbimeRoutes = (menus: any) => {
+  const croutes = deepMenu(menus)
+  const newRoutes = _.cloneDeep(routes)
+  if (newRoutes[0].children?.length === 2) {
+    newRoutes[0].children = newRoutes[0].children?.concat(croutes)
   }
-]
+  return newRoutes
+}
 
-const router = createBrowserRouter(routes, { basename: '/admin' })
+// 动态路由递归合并处理
+export const deepMenu = (menus: any) => {
+  const newMenus = menus.map((item: any, index: number) => {
+    const route: Record<string, any> = { path: item.path?.replace('/', '') }
+    if (item?.children && item.children.length) {
+      const copyChild = JSON.parse(JSON.stringify(item.children))
+      const deepChild = copyChild.map((m: any, i: number) => {
+        const splitArr = m.path.split('/')
+        return {
+          ...m,
+          path: splitArr[splitArr.length - 1]
+        }
+      })
+      deepChild.unshift({
+        index: true,
+        element: React.createElement(Navigate, { to: deepChild[0].path })
+      })
+      route.children = deepMenu(deepChild)
+    } else {
+      if (item.index) {
+        route.index = item.index
+        route.element = item.element
+        delete route.path
+      } else {
+        route.element = lazyLoad(`../pages${String(item.relativePath)}.tsx`)
 
-export default router
+        route.handle = { title: item.title }
+      }
+    }
+    return route
+  })
+  return newMenus
+}

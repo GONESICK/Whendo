@@ -1,8 +1,15 @@
+import React from 'react'
 import { Layout, Menu, type MenuProps } from 'antd'
-import { UserOutlined, VideoCameraOutlined } from '@ant-design/icons'
+import { UserOutlined } from '@ant-design/icons'
 import { type FC, useState, useEffect } from 'react'
-import { useNavigate, useMatches } from 'react-router-dom'
-import { getMenuList } from '@/api/user'
+import { useNavigate, useLocation } from 'react-router-dom'
+import { useAppSelector } from '@/redux/hook'
+// import { getMenu } from '@/router/index'
+
+// 图标字典
+const Iocns: Record<string, any> = {
+  UserOutlined
+}
 
 const { Sider } = Layout
 
@@ -11,46 +18,60 @@ const SiderComponent: FC<{ collapsed: boolean }> = ({
 }: {
   collapsed: boolean
 }) => {
+  const menus = useAppSelector((state) => state.user.menus)
   const navigate = useNavigate()
-  const matches = useMatches()
-  const [items, setItems] = useState([])
-  const selectKeys = [matches[matches.length - 1].pathname]
+  const matches = useLocation()
+
+  const [items, setItems] = useState([
+    {
+      key: '/home',
+      icon: <UserOutlined />,
+      label: '首页'
+    }
+  ])
+  const selectKeys = [matches.pathname]
   const [openKeys, setOpenKeys] = useState<string[]>([])
   const handleCLick: MenuProps['onClick'] = ({ key, keyPath }) => {
     navigate(key)
   }
   // 生成item项
   const generateMenu = (data: any) => {
-    const sortItems = data
-      .sort((a: any, b: any) => a.sort - b.sort)
-      .filter((f: any) => f.hidden)
+    const copyItems = JSON.parse(JSON.stringify(data))
+    copyItems.sort((a: any, b: any) => a.sort - b.sort)
+    const sortItems = copyItems.filter((f: any) => f.hidden)
     const items = sortItems.map((m: any) => {
       return {
         key: m.path,
-        icon: <UserOutlined />,
+        icon: React.createElement(Iocns[m.icon]),
         label: m.title,
         children: m.children ? generateMenu(m.children) : ''
       }
     })
     return items
   }
+  const loadMenus = () => {
+    const item = generateMenu(menus)
+    const newItems = item.filter((f: any) => {
+      return items.every((e: any) => e.key !== f.key)
+    })
+    setItems(items.concat(newItems))
+  }
   // 加载菜单
   useEffect(() => {
-    getMenuList({}).then(({ data: { list } }) => {
-      const items = generateMenu(list)
-      console.log(items)
-      setItems(items)
-    })
-  }, [])
+    if (menus?.length) {
+      loadMenus()
+    }
+  }, [menus])
+
   // 菜单动态展开 高亮选中
   useEffect(() => {
-    const parentRoute = matches.slice(0, -1)
-    parentRoute.forEach((f) => {
-      const idx = openKeys.findIndex((key) => key === f.pathname)
-      if (idx < 0) {
-        setOpenKeys([...openKeys, f.pathname])
-      }
-    })
+    const currentParent = '/' + matches.pathname.split('/')[1]
+    const parentRoute = currentParent
+
+    const idx = openKeys.findIndex((key) => key === parentRoute)
+    if (idx < 0) {
+      setOpenKeys([...openKeys, parentRoute])
+    }
   }, [matches])
   const handleOpenChange = (openKey: string[]) => {
     if (openKey.length > 1) {

@@ -1,3 +1,4 @@
+import { getMenuList } from '@/api/user'
 import { getUserInfo, login } from './../../api/login'
 import {
   createSlice,
@@ -7,14 +8,17 @@ import {
 import storage from 'redux-persist/lib/storage'
 import { persistReducer } from 'redux-persist'
 import { type AppDispatch } from '../store'
+import { store } from '@/redux/store'
 interface userState {
   accessToken: string
   userInfo: Record<string, any>
+  menus: any[]
 }
 
 const initialState: userState = {
   accessToken: '',
-  userInfo: {}
+  userInfo: {},
+  menus: []
 }
 
 export const userSlice = createSlice({
@@ -27,22 +31,17 @@ export const userSlice = createSlice({
     },
     setUserInfo: (state, action: PayloadAction<any>) => {
       state.userInfo = action.payload
+    },
+    setMenus: (state, action: PayloadAction<any>) => {
+      state.menus = action.payload
     }
   }
-  // extraReducers: (builder) => {
-  //   builder.addCase(
-  //     userlogin.fulfilled,
-  //     (state, action: PayloadAction<any>) => {
-  //       state.accessToken = action.payload
-  //     }
-  //   )
-  // }
 })
 // redux-persist config
 const PersistConfig = {
   key: 'user', // storage key name
   storage, // localStorage
-  whitelist: ['accessToken'] // state whitelist
+  whitelist: ['accessToken', 'menus'] // state whitelist
 }
 
 // async action
@@ -55,6 +54,26 @@ export const getInfo = () => async (dispatch: AppDispatch) => {
   dispatch(userSlice.actions.setUserInfo(data))
 }
 
-export const { setToken, setUserInfo } = userSlice.actions
+// 递归验证角色菜单
+const loopValidMenus = (menus: any[], role: any[]) => {
+  const newMenus = menus.filter((f: any) => {
+    if (f.children) {
+      f.children = loopValidMenus(f.children, role)
+    }
+    return role.some((s: any) => f.role?.includes(s))
+  })
+  return newMenus
+}
+
+export const getMenus = () => async (dispatch: AppDispatch) => {
+  const {
+    data: { list }
+  } = await getMenuList({})
+  const { role } = store.getState().user.userInfo
+  const filterMenus = loopValidMenus(list, role)
+  dispatch(userSlice.actions.setMenus(filterMenus))
+}
+
+export const { setToken, setUserInfo, setMenus } = userSlice.actions
 
 export default persistReducer(PersistConfig, userSlice.reducer)

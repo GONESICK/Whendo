@@ -1,6 +1,6 @@
 import React, { type FC, useState } from 'react'
-import { useAppSelector, useAppDispatch } from '@/redux/hook'
-import { userlogin } from '@/redux/slice/userSlice'
+import { useAppDispatch } from '@/redux/hook'
+import { userlogin, getMenus, getInfo } from '@/redux/slice/userSlice'
 import { useNavigate } from 'react-router-dom'
 import { Button, Form, Input } from 'antd'
 import { LockOutlined, UserOutlined } from '@ant-design/icons'
@@ -10,11 +10,12 @@ const Login: FC = () => {
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
-  const token = useAppSelector((state) => state.user.accessToken)
 
   const handleLogin = async (params: any) => {
     try {
       await dispatch(userlogin(params))
+      await dispatch(getInfo())
+      dispatch(getMenus())
       setLoading(false)
       navigate('/home')
     } catch (error) {
@@ -28,7 +29,6 @@ const Login: FC = () => {
   return (
     <LoginStyleWrapper>
       <div className="loginbox">
-        token:{token}
         <div className="head">
           <h2>Login</h2>
           <span>Whendo Admin</span>

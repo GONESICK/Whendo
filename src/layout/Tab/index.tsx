@@ -1,14 +1,16 @@
 import React, { useEffect, type FC } from 'react'
 import { useState } from 'react'
 import { Tabs, type TabsProps } from 'antd'
-import { useMatches, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { useAppSelector } from '@/redux/hook'
 
 type TargetKey = React.MouseEvent | React.KeyboardEvent | string
 
 type tabItems = Exclude<TabsProps['items'], undefined>
 
 const Tab: FC = () => {
-  const matches = useMatches()
+  const location = useLocation()
+  const menus = useAppSelector((state) => state.user.menus)
   const navigate = useNavigate()
   const [activeKey, setActiveKey] = useState('')
   const [items, setItems] = useState<tabItems>([
@@ -18,24 +20,32 @@ const Tab: FC = () => {
       closable: false
     }
   ])
-
+  // 递归查找title
+  const getLabel = (menu: any[], pathName: string) => {
+    let label = ''
+    menu.forEach((item: any) => {
+      if (item.path === pathName) {
+        label = item.title
+      }
+      if (!label && item.children) {
+        label = getLabel(item.children, pathName)
+      }
+    })
+    return label
+  }
   useEffect(() => {
-    const currentMatch = matches[matches.length - 1]
-    const currentPath = currentMatch.pathname
-    if (
-      currentPath !== '/home' &&
-      items.every((e) => e.key !== currentMatch.pathname)
-    ) {
+    const currentPath = location?.pathname
+    if (currentPath !== '/home' && items.every((e) => e.key !== currentPath)) {
       setItems([
         ...items,
         {
-          key: currentMatch.pathname,
-          label: (currentMatch.handle as any)?.title
+          key: currentPath,
+          label: getLabel(menus, currentPath)
         }
       ])
     }
-    setActiveKey(currentMatch.pathname)
-  }, [matches])
+    setActiveKey(currentPath)
+  }, [location])
 
   const onChange = (key: string) => {
     setActiveKey(key)
